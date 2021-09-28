@@ -148,7 +148,7 @@ class PSO:
         particle.evaluate()
 
 
-    def start(self):
+    def optimize(self):
         '''Inicia o processo de busca usando o algoritmo de PSO
         '''
         g_best = self.get_global_best()
