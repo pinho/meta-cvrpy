@@ -69,8 +69,8 @@ class PSO:
         num_iterations: int,
         num_particles: int,
         num_dimensions: int,
-        range_values: Tuple[float,float],
-        ptype=Particle # Tipo da partícula
+        range_values = (0., 1.),
+        ptype = Particle # Tipo da partícula
     ):
         self.objective_function = objfunction
         self.num_iterations = num_iterations
