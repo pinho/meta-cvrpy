@@ -1,7 +1,7 @@
 from typing import List
 from loggibud.v1.types import CVRPInstance, CVRPSolution, CVRPSolutionVehicle
-from cvrpy.pso import Particle
 
+from cvrpy.pso import Particle
 from cvrpy.utils import BoundTransformer, linear_distance
 
 class ParticleDecoder:
@@ -25,7 +25,7 @@ class ParticleDecoder:
         tuples = [tupl for tupl in enumerate(customers_part)]
         tuples.sort(key=lambda x:x[1])
         customer_priority = [ i for i, _ in tuples]
-        print('Prioridade:', customer_priority)
+        # print('Prioridade:', customer_priority)
 
         # Definir os pontos a partir dos valores de veículos
         vehicles_points = [(vehicles_part[i], vehicles_part[i+M]) for i in range(M)]
@@ -33,10 +33,10 @@ class ParticleDecoder:
         # Pra cada ponto de entrega, calcular a distância para os pontos de referência
         vehicle_refs = {point: [] for point in vehicles_points}
 
-        for i, d in enumerate(delivery_points):
-            nearest = min(vehicles_points, key=lambda x: linear_distance(d, x))
-            vehicle_refs[nearest].append(i)
-            pass
+        for i in customer_priority:
+            nearest_refpoint = min(vehicles_points, 
+                key=lambda tup: linear_distance(delivery_points[i], tup))
+            vehicle_refs[nearest_refpoint].append(i)
 
         # Criar um objeto de CVRPSolution
         vehicles: List[CVRPSolutionVehicle] = []
