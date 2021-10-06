@@ -1,7 +1,6 @@
 from typing import Iterable, List
 from loggibud.v1.types import CVRPInstance, CVRPSolution, CVRPSolutionVehicle
 
-from cvrpy.pso import Particle
 from cvrpy.utils import BoundTransformer, linear_distance
 
 class ParticleDecoder:

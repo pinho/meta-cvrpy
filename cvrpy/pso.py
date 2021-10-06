@@ -1,15 +1,19 @@
 from copy import deepcopy
 from math import sqrt
-from typing import List, Callable, Tuple
+from typing import List
+from loggibud.v1.types import CVRPInstance
 
 import numpy as np
 import numpy.random as npr
 
+from cvrpy.particle.decoder import ParticleDecoder
+from cvrpy.route_functions import total_distance
+
 class Particle:
     '''Classe que representa uma partícula.
     '''
-    def __init__(self, objfunction, num_dimensions, range = (0, 1)):
-        self.obj_function = objfunction
+    def __init__(self, problem: CVRPInstance, num_dimensions: int, range = (0, 1)):
+        self.problem = problem
         self.num_dimensions = num_dimensions
         self.position = npr.uniform(range[0], range[1], size=self.num_dimensions)
         self.fitness_x = None
@@ -24,7 +28,8 @@ class Particle:
         return f"{self.position} => {self.fitness_x:.8}"
 
     def evaluate(self):
-        self.fitness_x = self.obj_function(self.position)
+        solution = ParticleDecoder.decode(self.position, self.problem)
+        self.fitness_x = total_distance(solution)
 
     def copy(self):
         return deepcopy(self)
@@ -35,18 +40,9 @@ class Swarm:
     '''
     particles: List[Particle]
 
-    def __init__(self,
-        objfunction: Callable,
-        num_particles: int,
-        num_dimensions: int,
-        ptype = Particle
-    ):
-        self.obj_function = objfunction
+    def __init__(self, problem: CVRPInstance, num_particles: int, num_dimensions: int):
         self.num_particles = num_particles
-        self.particles = [
-            ptype(self.obj_function, num_dimensions) 
-            for _ in range(self.num_particles) 
-        ]
+        self.particles = [Particle(problem, num_dimensions) for _ in range(self.num_particles)]
     
     def __str__(self):
         strings = [ f"{p.fitness_x:.5}" for p in self.particles]
@@ -65,30 +61,27 @@ class Swarm:
 
 class PSO:
     def __init__(self,
-        objfunction: Callable,
-        num_iterations: int,
+        problem: CVRPInstance,
         num_particles: int,
-        num_dimensions: int,
-        range_values = (0., 1.),
-        ptype = Particle # Tipo da partícula
+        num_vehicles: int,
+        range_values = (0., 1.)
     ):
-        self.objective_function = objfunction
-        self.num_iterations = num_iterations
+        self.problem = problem
         self.num_particles = num_particles
-        self.num_dimensions = num_dimensions
+        self.num_dimensions = len(self.problem.deliveries) + 2*num_vehicles
         self.range_values = range_values
         # Definição de contantes e parâmetros do PSO
         self.c1 = 2.05
         self.c2 = 2.05
         self.w_range = (.4, .9)
-        self.w = np.array([
-            self.w_range[1] - (
-                self.w_range[1] - self.w_range[0]) * i / self.num_iterations
-            for i in range(self.num_iterations) 
-        ])
+        # self.w = np.array([
+        #     self.w_range[1] - (
+        #         self.w_range[1] - self.w_range[0]) * i / self.num_iterations
+        #     for i in range(self.num_iterations) 
+        # ])
         self.max_velocity = (self.range_values[1] - self.range_values[0]) / 2.0
         # Instanciação do enxame
-        self.swarm = Swarm(objfunction, self.num_particles, num_dimensions, ptype=ptype)
+        self.swarm = Swarm(self.problem, self.num_particles, self.num_dimensions)
         self.convergence = np.array([], dtype=float)
 
 
@@ -143,18 +136,25 @@ class PSO:
             
 
     # Fazer a avaliação de uma partícula
-    @staticmethod
-    def evaluate(particle: Particle):
+    def evaluate(self, particle: Particle):
         particle.evaluate()
 
 
-    def optimize(self):
+    def optimize(self, until: int) -> Particle:
         '''Inicia o processo de busca usando o algoritmo de PSO
         '''
+        num_iterations = until
+
+        self.w = np.array([
+            self.w_range[1] - (
+                self.w_range[1] - self.w_range[0]) * i / num_iterations
+            for i in range(num_iterations) 
+        ])
+
         g_best = self.get_global_best()
         self.convergence = np.array([], dtype=float)
 
-        for t in np.arange(self.num_iterations):
+        for t in np.arange(num_iterations):
             for i in np.arange(self.num_particles):
                 self.update_velocity(t, self.swarm.particles[i], g_best)
                 self.move_particle(self.swarm.particles[i])
