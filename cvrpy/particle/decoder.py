@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterable, List
 from loggibud.v1.types import CVRPInstance, CVRPSolution, CVRPSolutionVehicle
 
 from cvrpy.pso import Particle
@@ -7,7 +7,7 @@ from cvrpy.utils import BoundTransformer, linear_distance
 class ParticleDecoder:
 
     @staticmethod
-    def decode(particle: Particle, instance: CVRPInstance) -> CVRPSolution:
+    def decode(vector: Iterable, instance: CVRPInstance) -> CVRPSolution:
         # Delimitar o plano cartesiano
         bounds = BoundTransformer.from_instance(instance)
 
@@ -17,9 +17,9 @@ class ParticleDecoder:
 
         # Separar as duas partes das dimensões
         N = len(instance.deliveries)
-        M = int((len(particle.position) - N)/2)
-        customers_part = particle.position[:N]
-        vehicles_part = particle.position[N:]
+        M = int((len(vector) - N)/2)
+        customers_part = vector[:N]
+        vehicles_part = vector[N:]
 
         # Ordenar os valores de clientes obtendo os índices
         tuples = [tupl for tupl in enumerate(customers_part)]
